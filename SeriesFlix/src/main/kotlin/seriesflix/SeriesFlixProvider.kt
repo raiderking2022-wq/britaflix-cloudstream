@@ -330,7 +330,9 @@ class SeriesFlixProvider : MainAPI() {
             } else {
                 // Otros posibles hosts: se delega a los extractores de CloudStream
                 try {
-                    loadExtractor(opt.watchUrl, data, subtitleCallback) { link ->
+                    val collected = mutableListOf<ExtractorLink>()
+                    loadExtractor(opt.watchUrl, data, subtitleCallback) { link -> collected.add(link) }
+                    for (link in collected) {
                         any = true
                         callback(
                             newExtractorLink("$name $label", "$name · $label (${link.name})", link.url) {
