@@ -1,0 +1,8 @@
+{
+  "name": "SeriesFlix",
+  "description": "SeriesFlix: series en español (latino, castellano y subtitulado) desde seriesflixhd.boats",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/eagleblue2024-pixel/seriesflix-cloudstream/builds/plugins.json"
+  ]
+}
