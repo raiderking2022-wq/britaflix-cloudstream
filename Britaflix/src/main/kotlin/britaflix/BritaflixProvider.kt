@@ -1,6 +1,7 @@
 package britaflix
 
 import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.network.WebViewResolver
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.utils.Qualities
@@ -35,6 +36,31 @@ class BritaflixProvider : MainAPI() {
         )
 
         private const val NUPLOAD_REFERER = "https://nupload.my/"
+
+        private const val UA =
+            "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+
+        /** Cabeceras que envía el navegador al cargar el reproductor (iframe). */
+        private val pageHeaders = mapOf(
+            "User-Agent" to UA,
+            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language" to "es-ES,es;q=0.9,en;q=0.8",
+            "Sec-Fetch-Dest" to "iframe",
+            "Sec-Fetch-Mode" to "navigate",
+            "Sec-Fetch-Site" to "cross-site",
+            "Upgrade-Insecure-Requests" to "1"
+        )
+
+        /** Cabeceras que envía hls.js al pedir playlist y segmentos. */
+        private val streamHeaders = mapOf(
+            "User-Agent" to UA,
+            "Accept" to "*/*",
+            "Origin" to "https://nupload.my",
+            "Referer" to NUPLOAD_REFERER,
+            "Sec-Fetch-Dest" to "empty",
+            "Sec-Fetch-Mode" to "cors",
+            "Sec-Fetch-Site" to "cross-site"
+        )
 
         /** Episode URL ends in ...-{season}x{episode}/ */
         private val episodeCodeRegex = Regex("""-(\d+)x(\d+)/?$""")
@@ -241,89 +267,143 @@ class BritaflixProvider : MainAPI() {
         }
     }
 
+    /** Decodifica el m3u8 de la variante jwplayer de nupload. */
+    private fun decodeNupload(html: String): String? {
+        return try {
+            val forEach = nuploadForEachRegex.find(html) ?: return null
+            val arrName = forEach.groupValues[1]
+            val const = forEach.groupValues[3].toLongOrNull() ?: return null
+            val sesz = nuploadSeszRegex.find(html)?.groupValues?.getOrNull(1) ?: return null
+            val arrMatch = Regex("""var\s+$arrName\s*=\s*\[(.*?)]""",
+                setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
+                .find(html) ?: return null
+            val tokens = Regex("\"([^\"]+)\"").findAll(arrMatch.groupValues[1]).toList()
+            if (tokens.isEmpty()) return null
+            val sb = StringBuilder()
+            for (tok in tokens) {
+                val decoded = String(decodeBase64(tok.groupValues[1]) ?: return null)
+                val digits = decoded.filter(Char::isDigit)
+                if (digits.isEmpty()) return null
+                val code = digits.toLong() - const
+                if (code < 0 || code > Char.MAX_VALUE.code) return null
+                sb.append(code.toInt().toChar())
+            }
+            val base = sb.toString().trim()
+            if (!base.startsWith("http")) null else "$base?s=$sesz"
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /** true = TS válido, false = el servidor devolvió HTML, null = no se pudo comprobar. */
+    private suspend fun checkStream(streamUrl: String): Boolean? {
+        return try {
+            val playlist = app.get(streamUrl, headers = streamHeaders).text.trim()
+            if (!playlist.startsWith("#EXTM3U")) return false
+            val segUrl = Regex("""https?://[^\s"']+\.ts[^\s"']*""").find(playlist)?.value
+                ?: return true
+            val head = app.get(segUrl, headers = streamHeaders).text.take(80)
+            !(head.contains("<html", true) || head.contains("File deleted", true))
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private suspend fun emitNupload(
+        streamUrl: String,
+        label: String,
+        warn: Boolean,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val title = if (warn) "$name · $label (alterno)" else "$name · $label"
+        callback(
+            newExtractorLink("$name $label", title, streamUrl) {
+                this.referer = NUPLOAD_REFERER
+                this.quality = if (warn) Qualities.P480.value else Qualities.P720.value
+                this.type = ExtractorLinkType.M3U8
+                this.headers = streamHeaders
+            }
+        )
+    }
+
     /**
-     * Resolves a nupload.my/watch/{id} page into its HLS playlist.
-     * The page stores the stream URL as an array of Base64 tokens whose digits
-     * (minus a per-load constant) map to characters, plus a session token sesz.
+     * Resuelve nupload.my/watch/{id}. nupload sirve dos variantes: jwplayer (m3u8 cifrado)
+     * o un iframe a otro host (voe.sx...). Si nada funciona, usa un WebView real que
+     * intercepta el m3u8, igual que el navegador.
      */
     private suspend fun resolveNupload(
         watchUrl: String,
+        episodeUrl: String,
         label: String,
+        subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        return try {
-            val response = app.get(watchUrl, headers = baseHeaders, referer = "$mainUrl/")
-            if (response.code !in 200..299) return false
-            val html = response.text
-
-            val forEach = nuploadForEachRegex.find(html) ?: return false
-            val arrName = forEach.groupValues[1]
-            val const = forEach.groupValues[3].toLongOrNull() ?: return false
-            val sesz = nuploadSeszRegex.find(html)?.groupValues?.getOrNull(1)
-                ?: return false
-
-            val arrMatch = Regex("""var\s+$arrName\s*=\s*\[(.*?)]""",
-                setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
-                .find(html) ?: return false
-            val tokens = Regex("\"([^\"]+)\"").findAll(arrMatch.groupValues[1]).toList()
-            if (tokens.isEmpty()) return false
-
-            val streamBase = buildString {
-                for (tok in tokens) {
-                    try {
-                        val decoded = String(decodeBase64(tok.groupValues[1]) ?: return false)
-                        val digits = decoded.filter(Char::isDigit)
-                        if (digits.isEmpty()) return false
-                        val code = digits.toLong() - const
-                        if (code < 0 || code > Char.MAX_VALUE.code) return false
-                        append(code.toInt().toChar())
-                    } catch (e: Exception) {
-                        return false
-                    }
-                }
-            }.trim()
-            if (!streamBase.startsWith("http")) return false
-
-            val streamUrl = "$streamBase?s=$sesz"
-
-            // Verificar el playlist: los archivos eliminados devuelven una página HTML
-            val playlist = app.get(
-                streamUrl,
-                headers = baseHeaders + mapOf("Referer" to NUPLOAD_REFERER)
-            ).text.trim()
-            if (!playlist.startsWith("#EXTM3U")) return false
-
-            // Comprobar el primer segmento: los archivos eliminados por DMCA
-            // devuelven HTML en lugar de TS y provocarían un error de reproducción
-            val segUrl = Regex("""https?://[^\s"']+\.ts[^\s"']*""").find(playlist)?.value
-            if (segUrl != null) {
-                try {
-                    val segHead = app.get(
-                        segUrl,
-                        headers = baseHeaders + mapOf(
-                            "Referer" to NUPLOAD_REFERER,
-                            "Range" to "bytes=0-1023"
-                        )
-                    ).text.take(64)
-                    if (segHead.contains("<html", ignoreCase = true) ||
-                        segHead.contains("File deleted", ignoreCase = true)
-                    ) return false
-                } catch (e: Exception) {
-                    // Si la comprobación falla, se ofrece el enlace igualmente
-                }
-            }
-
-            callback(
-                newExtractorLink("$name $label", "$name · $label", streamUrl) {
-                    this.referer = NUPLOAD_REFERER
-                    this.quality = Qualities.P720.value
-                    this.type = ExtractorLinkType.M3U8
-                }
-            )
-            true
+        var found = false
+        var html = ""
+        try {
+            html = app.get(watchUrl, headers = pageHeaders, referer = episodeUrl).text
         } catch (e: Exception) {
-            false
         }
+
+        val streamUrl = decodeNupload(html)
+        if (streamUrl != null) {
+            val ok = checkStream(streamUrl)
+            if (ok != false) {
+                emitNupload(streamUrl, label, false, callback)
+                return true
+            }
+        }
+
+        // Variante iframe (voe.sx u otro host)
+        val iframe = Regex("""<iframe[^>]+src=["']([^"']+)["']""").find(html)?.groupValues?.get(1)
+            ?: watchUrl.takeIf { it.contains("/iframe/?url=") }
+        val target = iframe?.let {
+            if (it.contains("url=")) java.net.URLDecoder.decode(it.substringAfter("url=").substringBefore("&"), "UTF-8")
+            else it
+        }
+        if (target != null && target.startsWith("http") && !target.contains("nupload") &&
+            !target.trimEnd('/').endsWith("/e/123")
+        ) {
+            try {
+                val collected = mutableListOf<ExtractorLink>()
+                loadExtractor(target, NUPLOAD_REFERER, subtitleCallback) { collected.add(it) }
+                for (link in collected) {
+                    found = true
+                    callback(
+                        newExtractorLink("$name $label", "$name · $label (${link.name})", link.url) {
+                            this.referer = link.referer
+                            this.quality = link.quality
+                            this.type = link.type
+                            this.headers = link.headers
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+            }
+        }
+        if (found) return true
+
+        // WebView: carga la página como el navegador y captura el m3u8
+        try {
+            val res = app.get(
+                watchUrl.replace("/iframe/?url=", "/watch/"),
+                referer = episodeUrl,
+                interceptor = WebViewResolver(Regex("""sv\d*\.[^/]+/.*\.m3u8|\.m3u8\?"""))
+            )
+            val captured = res.url
+            if (captured.contains(".m3u8")) {
+                emitNupload(captured, label, false, callback)
+                return true
+            }
+        } catch (e: Exception) {
+        }
+
+        // Último recurso: ofrecer el enlace decodificado aunque la comprobación falló
+        if (streamUrl != null) {
+            emitNupload(streamUrl, label, true, callback)
+            return true
+        }
+        return false
     }
 
     override suspend fun loadLinks(
@@ -370,7 +450,7 @@ class BritaflixProvider : MainAPI() {
         for (opt in options) {
             val label = if (opt.index > 1) "${opt.lang} ${opt.index}" else opt.lang
             if (opt.watchUrl.contains("nupload")) {
-                if (resolveNupload(opt.watchUrl, label, callback)) any = true
+                if (resolveNupload(opt.watchUrl, data, label, subtitleCallback, callback)) any = true
             } else {
                 // Otros posibles hosts: se delega a los extractores de CloudStream
                 try {

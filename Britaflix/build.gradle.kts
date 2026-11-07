@@ -1,4 +1,4 @@
-version = 2
+version = 3
 cloudstream {
     description = "Britaflix: series en español (latino, castellano y subtitulado) en HD, con catálogo por páginas, géneros, productoras, búsqueda y episodios por temporada."
     authors = listOf("hakanyordan-sys")
