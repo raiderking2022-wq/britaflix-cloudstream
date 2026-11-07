@@ -1,11 +1,11 @@
 [
     {
         "iconUrl": "https://s.seriesflixhd.boats/series/imgs/favicon-192.png",
-        "jarFileSize": 86664,
-        "fileHash": "sha256-d4a0443d6ca6e1595e82d322070c455c282bed3f1b00c1bb968eecf5388c9687",
+        "jarFileSize": 101533,
+        "fileHash": "sha256-fbc444d0ab71a383c8b7c6a2ebb422f6a1109f097b35ca602a8e990f4f116194",
         "apiVersion": 1,
         "repositoryUrl": "https://github.com/raiderking2022-wq/britaflix-cloudstream",
-        "fileSize": 27584,
+        "fileSize": 31393,
         "status": 3,
         "language": "es",
         "authors": [
@@ -14,12 +14,12 @@
         "tvTypes": [
             "TvSeries"
         ],
-        "version": 2,
+        "version": 3,
         "internalName": "Britaflix",
         "jarUrl": "https://raw.githubusercontent.com/raiderking2022-wq/britaflix-cloudstream/builds/Britaflix.jar",
         "description": "Britaflix: series en espa\u00f1ol (latino, castellano y subtitulado) en HD, con cat\u00e1logo por p\u00e1ginas, g\u00e9neros, productoras, b\u00fasqueda y episodios por temporada.",
         "url": "https://raw.githubusercontent.com/raiderking2022-wq/britaflix-cloudstream/builds/Britaflix.cs3",
         "name": "Britaflix",
-        "jarHash": "sha256-aa4a4df3621db41a29cdb1ae459958f2b5161fd5bfb5aa2ce894477a1d50a6c4"
+        "jarHash": "sha256-aac8c292ff0e58cd76ace0a6095a7462d124a5a86186facf9cbc060d5460a3a7"
     }
 ]
