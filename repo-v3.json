@@ -1,0 +1,8 @@
+{
+  "name": "Britaflix v3 verificada",
+  "description": "Entrada fijada a la publicación v3 para comprobar la instalación",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/raiderking2022-wq/britaflix-cloudstream/bbfffcef8f124a7e93896e773fe636c75ed2d917/plugins.json"
+  ]
+}
