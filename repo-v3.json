@@ -3,6 +3,6 @@
   "description": "Entrada fijada a la publicación v3 para comprobar la instalación",
   "manifestVersion": 1,
   "pluginLists": [
-    "https://raw.githubusercontent.com/raiderking2022-wq/britaflix-cloudstream/bbfffcef8f124a7e93896e773fe636c75ed2d917/plugins.json"
+    "https://raw.githubusercontent.com/raiderking2022-wq/britaflix-cloudstream/c4942eee018120cac24b4c48c1599f28f86d4629/plugins-v3.json"
   ]
 }
