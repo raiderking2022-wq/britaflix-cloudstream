@@ -1,4 +1,4 @@
-package seriesflix
+package britaflix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.ExtractorLink
@@ -22,9 +22,9 @@ import java.net.URLEncoder
  *  - nupload player: the m3u8 URL is built from a Base64 char array (digits - constant)
  *    plus the session token `sesz`; the playlist requires Referer https://nupload.my/.
  */
-class SeriesFlixProvider : MainAPI() {
+class BritaflixProvider : MainAPI() {
     override var mainUrl = "https://seriesflixhd.boats"
-    override var name = "SeriesFlix"
+    override var name = "Britaflix"
     override var lang = "es"
     override val hasMainPage = true
     override val supportedTypes = setOf(TvType.TvSeries)
@@ -284,8 +284,37 @@ class SeriesFlixProvider : MainAPI() {
             }.trim()
             if (!streamBase.startsWith("http")) return false
 
+            val streamUrl = "$streamBase?s=$sesz"
+
+            // Verificar el playlist: los archivos eliminados devuelven una página HTML
+            val playlist = app.get(
+                streamUrl,
+                headers = baseHeaders + mapOf("Referer" to NUPLOAD_REFERER)
+            ).text.trim()
+            if (!playlist.startsWith("#EXTM3U")) return false
+
+            // Comprobar el primer segmento: los archivos eliminados por DMCA
+            // devuelven HTML en lugar de TS y provocarían un error de reproducción
+            val segUrl = Regex("""https?://[^\s"']+\.ts[^\s"']*""").find(playlist)?.value
+            if (segUrl != null) {
+                try {
+                    val segHead = app.get(
+                        segUrl,
+                        headers = baseHeaders + mapOf(
+                            "Referer" to NUPLOAD_REFERER,
+                            "Range" to "bytes=0-1023"
+                        )
+                    ).text.take(64)
+                    if (segHead.contains("<html", ignoreCase = true) ||
+                        segHead.contains("File deleted", ignoreCase = true)
+                    ) return false
+                } catch (e: Exception) {
+                    // Si la comprobación falla, se ofrece el enlace igualmente
+                }
+            }
+
             callback(
-                newExtractorLink("$name $label", "$name · $label", "$streamBase?s=$sesz") {
+                newExtractorLink("$name $label", "$name · $label", streamUrl) {
                     this.referer = NUPLOAD_REFERER
                     this.quality = Qualities.P720.value
                     this.type = ExtractorLinkType.M3U8

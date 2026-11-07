@@ -1,2 +1,2 @@
-rootProject.name = "SeriesFlixCloudstream"
-include("SeriesFlix")
+rootProject.name = "BritaflixCloudstream"
+include("Britaflix")

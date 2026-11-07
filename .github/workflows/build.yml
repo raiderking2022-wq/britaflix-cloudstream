@@ -1,4 +1,4 @@
-name: Compilar SeriesFlix
+name: Compilar Britaflix
 on:
   push:
     branches: [main]
@@ -31,13 +31,13 @@ jobs:
       - name: Preparar distribución
         run: |
           mkdir -p dist
-          cp SeriesFlix/build/*.cs3 dist/
-          cp SeriesFlix/build/SeriesFlix.jar dist/ 2>/dev/null || true
+          cp Britaflix/build/*.cs3 dist/
+          cp Britaflix/build/Britaflix.jar dist/ 2>/dev/null || true
           cp build/plugins.json dist/
           cp repo.json dist/
           test -s dist/plugins.json
           test -s dist/repo.json
-          test -s dist/SeriesFlix.cs3
+          test -s dist/Britaflix.cs3
       - uses: actions/upload-artifact@v4
         with:
           name: seriesflix-cloudstream

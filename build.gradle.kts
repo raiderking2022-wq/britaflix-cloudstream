@@ -22,7 +22,7 @@ subprojects {
     apply(plugin = "kotlin-android")
     apply(plugin = "com.lagradost.cloudstream3.gradle")
     extensions.configure<BaseExtension>("android") {
-        namespace = "seriesflix.${project.name.lowercase()}"
+        namespace = "britaflix.${project.name.lowercase()}"
         compileSdkVersion(35)
         defaultConfig { minSdk = 21; targetSdk = 35 }
         compileOptions {

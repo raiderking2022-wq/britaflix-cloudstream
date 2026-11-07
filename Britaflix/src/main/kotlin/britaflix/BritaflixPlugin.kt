@@ -1,11 +1,11 @@
-package seriesflix
+package britaflix
 
 import com.lagradost.cloudstream3.plugins.BasePlugin
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 
 @CloudstreamPlugin
-class SeriesFlixPlugin : BasePlugin() {
+class BritaflixPlugin : BasePlugin() {
     override fun load() {
-        registerMainAPI(SeriesFlixProvider())
+        registerMainAPI(BritaflixProvider())
     }
 }

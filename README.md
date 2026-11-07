@@ -1,6 +1,6 @@
-# SeriesFlix CloudStream
+# Britaflix CloudStream
 
-Complemento de CloudStream 3 para ver series de **SeriesFlix** (seriesflixhd.boats) en español: latino, castellano y subtitulado.
+Complemento de CloudStream 3 para ver series en español (latino, castellano y subtitulado) en español: latino, castellano y subtitulado.
 
 ## Características
 
@@ -19,7 +19,7 @@ En CloudStream: **Configuración → Extensiones → Añadir repositorio** y peg
 https://raw.githubusercontent.com/eagleblue2024-pixel/seriesflix-cloudstream/builds/repo.json
 ```
 
-Luego instala el complemento **SeriesFlix** desde ese repositorio.
+Luego instala el complemento **Britaflix** desde ese repositorio.
 
 ## Cómo funciona
 
@@ -31,14 +31,14 @@ Luego instala el complemento **SeriesFlix** desde ese repositorio.
 ## Notas
 
 - El sitio es un indexador: si un archivo fue eliminado en el host (DMCA), ese episodio no reproducirá aunque aparezca en el catálogo.
-- Si el sitio cambia de dominio, basta actualizar `mainUrl` en `SeriesFlixProvider.kt`.
+- Si el sitio cambia de dominio, basta actualizar `mainUrl` en `BritaflixProvider.kt`.
 
 ## Estructura
 
 ```
-SeriesFlix/src/main/kotlin/seriesflix/
-├── SeriesFlixPlugin.kt      # Registro del plugin
-└── SeriesFlixProvider.kt    # Proveedor (catálogo, búsqueda, episodios, enlaces)
+Britaflix/src/main/kotlin/britaflix/
+├── BritaflixPlugin.kt      # Registro del plugin
+└── BritaflixProvider.kt    # Proveedor (catálogo, búsqueda, episodios, enlaces)
 ```
 
-Compilación automática con GitHub Actions (rama `builds`: `repo.json`, `plugins.json`, `SeriesFlix.cs3`, `SeriesFlix.jar`).
+Compilación automática con GitHub Actions (rama `builds`: `repo.json`, `plugins.json`, `Britaflix.cs3`, `Britaflix.jar`).

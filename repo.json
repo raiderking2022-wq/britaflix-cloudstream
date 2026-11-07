@@ -1,6 +1,6 @@
 {
-  "name": "SeriesFlix",
-  "description": "SeriesFlix: series en español (latino, castellano y subtitulado) desde seriesflixhd.boats",
+  "name": "Britaflix",
+  "description": "Britaflix: series en español (latino, castellano y subtitulado) en HD",
   "manifestVersion": 1,
   "pluginLists": [
     "https://raw.githubusercontent.com/eagleblue2024-pixel/seriesflix-cloudstream/builds/plugins.json"
