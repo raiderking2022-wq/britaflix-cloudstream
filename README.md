@@ -16,7 +16,7 @@ Complemento de CloudStream 3 para ver series en español (latino, castellano y s
 En CloudStream: **Configuración → Extensiones → Añadir repositorio** y pegar:
 
 ```
-https://raw.githubusercontent.com/eagleblue2024-pixel/seriesflix-cloudstream/builds/repo.json
+https://raw.githubusercontent.com/raiderking2022-wq/britaflix-cloudstream/builds/repo.json
 ```
 
 Luego instala el complemento **Britaflix** desde ese repositorio.

@@ -34,7 +34,7 @@ subprojects {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
     }
     cloudstream {
-        setRepo(System.getenv("GITHUB_REPOSITORY") ?: "eagleblue2024-pixel/seriesflix-cloudstream")
+        setRepo(System.getenv("GITHUB_REPOSITORY") ?: "raiderking2022-wq/britaflix-cloudstream")
         isCrossPlatform = true
         language = "es"
     }
