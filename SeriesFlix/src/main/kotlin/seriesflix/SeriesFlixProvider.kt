@@ -1,6 +1,5 @@
 package seriesflix
 
-import android.util.Base64
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
@@ -51,6 +50,30 @@ class SeriesFlixProvider : MainAPI() {
         )
 
         private val nuploadSeszRegex = Regex("""sesz="([^"]+)"""")
+
+        /** Decodificador Base64 puro (sin APIs de Android, para el JAR multiplataforma). */
+        private fun decodeBase64(input: String): ByteArray? {
+            return try {
+                val table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+                val clean = input.trim().trimEnd('=')
+                val out = mutableListOf<Byte>()
+                var buffer = 0
+                var bits = 0
+                for (c in clean) {
+                    val v = table.indexOf(c)
+                    if (v < 0) return null
+                    buffer = (buffer shl 6) or v
+                    bits += 6
+                    if (bits >= 8) {
+                        bits -= 8
+                        out.add(((buffer shr bits) and 0xFF).toByte())
+                    }
+                }
+                out.toByteArray()
+            } catch (e: Exception) {
+                null
+            }
+        }
     }
 
     override val mainPage = mainPageOf(
@@ -248,7 +271,7 @@ class SeriesFlixProvider : MainAPI() {
             val streamBase = buildString {
                 for (tok in tokens) {
                     try {
-                        val decoded = String(Base64.decode(tok.groupValues[1], Base64.NO_WRAP))
+                        val decoded = String(decodeBase64(tok.groupValues[1]) ?: return false)
                         val digits = decoded.filter(Char::isDigit)
                         if (digits.isEmpty()) return false
                         val code = digits.toLong() - const
@@ -296,11 +319,7 @@ class SeriesFlixProvider : MainAPI() {
                 opts.forEachIndexed { i, opt ->
                     val b64 = opt.attr("data-url").trim()
                     if (b64.isEmpty()) return@forEachIndexed
-                    val watch = try {
-                        String(Base64.decode(b64, Base64.NO_WRAP))
-                    } catch (e: Exception) {
-                        null
-                    } ?: return@forEachIndexed
+                    val watch = decodeBase64(b64)?.let { String(it) } ?: return@forEachIndexed
                     if (watch.startsWith("http") && seen.add(watch)) {
                         options.add(Option(lang, i + 1, watch))
                     }
@@ -310,11 +329,7 @@ class SeriesFlixProvider : MainAPI() {
             doc.select("div.Button.sgty").forEachIndexed { i, opt ->
                 val b64 = opt.attr("data-url").trim()
                 if (b64.isEmpty()) return@forEachIndexed
-                val watch = try {
-                    String(Base64.decode(b64, Base64.NO_WRAP))
-                } catch (e: Exception) {
-                    null
-                } ?: return@forEachIndexed
+                val watch = decodeBase64(b64)?.let { String(it) } ?: return@forEachIndexed
                 if (watch.startsWith("http") && seen.add(watch)) {
                     options.add(Option("Opción", i + 1, watch))
                 }
