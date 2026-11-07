@@ -1,0 +1,8 @@
+{
+  "name": "Britaflix",
+  "description": "Britaflix: series en español (latino, castellano y subtitulado) en HD",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/raiderking2022-wq/britaflix-cloudstream/builds/plugins.json"
+  ]
+}
