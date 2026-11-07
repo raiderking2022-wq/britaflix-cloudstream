@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Britaflix",
+    "internalName": "Britaflix",
+    "version": 3,
+    "apiVersion": 1,
+    "status": 3,
+    "language": "es",
+    "authors": ["hakanyordan-sys"],
+    "tvTypes": ["TvSeries"],
+    "repositoryUrl": "https://github.com/raiderking2022-wq/britaflix-cloudstream",
+    "url": "https://raw.githubusercontent.com/raiderking2022-wq/britaflix-cloudstream/bbfffcef8f124a7e93896e773fe636c75ed2d917/Britaflix.cs3",
+    "fileSize": 31393,
+    "fileHash": "sha256-fbc444d0ab71a383c8b7c6a2ebb422f6a1109f097b35ca602a8e990f4f116194"
+  }
+]
